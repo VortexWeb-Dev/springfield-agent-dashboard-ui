@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Download,
   LayoutGrid,
@@ -50,8 +50,8 @@ const TOKENS = {
   white: "#FFFFFF",
 };
 
-// ----- Demo: current agent (replace with live data) -----
-const ME = {
+// ----- Default agent (used until API loads) -----
+const DEFAULT_ME = {
   id: "AG-1027",
   name: "Aisha Khan",
   photo: "https://randomuser.me/api/portraits/women/44.jpg",
@@ -71,6 +71,18 @@ const ME = {
   revenueAED: 268000,
   clients: 49,
 };
+
+// API client
+import {
+  getHome,
+  getLeads,
+  getTasks,
+  getCalls,
+  getPipeline,
+  getEarnings,
+  getGoals,
+  getReports,
+} from "../api";
 
 // ----- Helpers -----
 function csvEscape(v) {
@@ -362,40 +374,17 @@ function Home({ me }) {
   );
 }
 
-function MyLeads({ me }) {
+function MyLeads({ me, leads }) {
   const [q, setQ] = useState("");
-  const leads = [
-    {
-      id: "L-901",
-      source: "Bayut",
-      status: "New",
-      age: "3h",
-      area: "Marina",
-      budget: "AED 1.2M",
-    },
-    {
-      id: "L-877",
-      source: "Meta",
-      status: "Contacted",
-      age: "9h",
-      area: "Downtown",
-      budget: "AED 2.4M",
-    },
-    {
-      id: "L-866",
-      source: "Website",
-      status: "New",
-      age: "1d",
-      area: "JVC",
-      budget: "AED 900k",
-    },
-  ];
   const filtered = useMemo(
     () =>
-      leads.filter((l) =>
-        Object.values(l).join(" ").toLowerCase().includes(q.toLowerCase())
+      (leads || []).filter((l) =>
+        Object.values(l || {})
+          .join(" ")
+          .toLowerCase()
+          .includes(q.toLowerCase())
       ),
-    [q]
+    [q, leads]
   );
   return (
     <Card>
@@ -423,7 +412,7 @@ function MyLeads({ me }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
+              {(filtered || []).map((l) => (
                 <tr
                   key={l.id}
                   className="border-t"
@@ -523,27 +512,8 @@ function Pipeline({ me }) {
   );
 }
 
-function Tasks() {
-  const items = [
-    {
-      id: "T-410",
-      title: "Send MoU to Mr. Khan",
-      due: "Today 5:30 PM",
-      type: "Document",
-    },
-    {
-      id: "T-406",
-      title: "Schedule viewing – Marina Gate",
-      due: "Tomorrow",
-      type: "Viewing",
-    },
-    {
-      id: "T-402",
-      title: "Follow up – Meta lead L-877",
-      due: "Overdue",
-      type: "Call",
-    },
-  ];
+function Tasks({ items }) {
+  items = items || [];
   return (
     <Card>
       <CardBody>
@@ -579,27 +549,8 @@ function Tasks() {
   );
 }
 
-function Calls() {
-  const list = [
-    {
-      id: "C-991",
-      who: "Mr. Ali",
-      when: "Today 14:05",
-      notes: "Asked for 2BR in Marina",
-    },
-    {
-      id: "C-987",
-      who: "Ms. Sara",
-      when: "Today 11:20",
-      notes: "Budget AED 1.5M, prefers JVC",
-    },
-    {
-      id: "C-976",
-      who: "Mr. Omar",
-      when: "Yesterday",
-      notes: "Viewing request weekend",
-    },
-  ];
+function Calls({ list }) {
+  list = list || [];
   return (
     <Card>
       <CardBody>
@@ -816,10 +767,10 @@ function Reports({ me, openReportCard }) {
                 <ResponsiveContainer>
                   <BarChart
                     data={[
-                      { name: "Calls", value: ME.calls },
-                      { name: "Activities", value: ME.activities },
-                      { name: "Tasks", value: ME.tasks },
-                      { name: "Closures", value: ME.closures },
+                      { name: "Calls", value: me.calls },
+                      { name: "Activities", value: me.activities },
+                      { name: "Tasks", value: me.tasks },
+                      { name: "Closures", value: me.closures },
                     ]}
                   >
                     <CartesianGrid
@@ -1101,31 +1052,61 @@ function AgentReportCard({ me, onClose }) {
 export default function AgentDashboard() {
   const [tab, setTab] = useState("home");
   const [openReport, setOpenReport] = useState(false);
+  const [me, setMe] = useState(DEFAULT_ME);
+  const [leads, setLeads] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [calls, setCalls] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const [homeRes, leadsRes, tasksRes, callsRes] = await Promise.all([
+          getHome().catch(() => null),
+          getLeads().catch(() => []),
+          getTasks().catch(() => []),
+          getCalls().catch(() => []),
+        ]);
+        if (!isMounted) return;
+        if (homeRes) {
+          setMe((prev) => ({ ...prev, ...normalizeAgent(homeRes) }));
+        }
+        setLeads(normalizeLeads(leadsRes || []));
+        setTasks(normalizeTasks(tasksRes || []));
+        setCalls(normalizeCalls(callsRes || []));
+      } catch (_) {
+        // keep defaults silently
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const Current = useMemo(() => {
     switch (tab) {
       case "home":
-        return <Home me={ME} />;
+        return <Home me={me} />;
       case "leads":
-        return <MyLeads me={ME} />;
+        return <MyLeads me={me} leads={leads} />;
       case "pipeline":
-        return <Pipeline me={ME} />;
+        return <Pipeline me={me} />;
       case "tasks":
-        return <Tasks />;
+        return <Tasks items={tasks} />;
       case "calls":
-        return <Calls />;
+        return <Calls list={calls} />;
       case "earnings":
-        return <Earnings me={ME} />;
+        return <Earnings me={me} />;
       case "goals":
-        return <Goals me={ME} />;
+        return <Goals me={me} />;
       case "reports":
-        return <Reports me={ME} openReportCard={() => setOpenReport(true)} />;
+        return <Reports me={me} openReportCard={() => setOpenReport(true)} />;
       case "settings":
         return <SettingsPage />;
       default:
-        return <Home me={ME} />;
+        return <Home me={me} />;
     }
-  }, [tab, openReport]);
+  }, [tab, openReport, me, leads, tasks, calls]);
 
   return (
     <div
@@ -1172,7 +1153,7 @@ export default function AgentDashboard() {
                 placeholder="Search my leads, tasks…"
               />
             </div>
-            <Button onClick={() => downloadMyCSV(ME)}>
+            <Button onClick={() => downloadMyCSV(me)}>
               <Download size={14} className="inline mr-1" />
               My CSV
             </Button>
@@ -1215,8 +1196,97 @@ export default function AgentDashboard() {
         © {new Date().getFullYear()} Springfield Properties • Agent Dashboard
       </footer>
       {openReport && (
-        <AgentReportCard me={ME} onClose={() => setOpenReport(false)} />
+        <AgentReportCard me={me} onClose={() => setOpenReport(false)} />
       )}
     </div>
   );
+}
+
+// ----- Normalizers: adapt API responses to the UI shape without changing UI -----
+function normalizeAgent(payload) {
+  if (!payload) return {};
+  const agent = payload.agent || payload;
+  const totals = (payload.stats && payload.stats.total) || {};
+  return {
+    id: agent.id || agent.agentId || DEFAULT_ME.id,
+    name: agent.name || agent.fullName || DEFAULT_ME.name,
+    photo: agent.photo || agent.avatarUrl || DEFAULT_ME.photo,
+    team: agent.team || agent.department || DEFAULT_ME.team,
+    phone: agent.phone || agent.mobile || DEFAULT_ME.phone,
+    email: agent.email || DEFAULT_ME.email,
+    leads: Number(totals.leads ?? agent.leads ?? DEFAULT_ME.leads),
+    deals: Number(totals.deals ?? agent.deals ?? DEFAULT_ME.deals),
+    activities: Number(
+      totals.activities ?? agent.activities ?? DEFAULT_ME.activities
+    ),
+    calls: Number(totals.calls ?? agent.calls ?? DEFAULT_ME.calls),
+    closures: Number(totals.closures ?? agent.closures ?? DEFAULT_ME.closures),
+    tasks: Number(totals.tasks ?? agent.tasks ?? DEFAULT_ME.tasks),
+    missed: Number(agent.missed ?? DEFAULT_ME.missed),
+    conv: Number(
+      totals.conv ?? agent.conversion ?? agent.conv ?? DEFAULT_ME.conv
+    ),
+    commissionAED: Number(
+      totals.commission ??
+        agent.commissionAED ??
+        agent.commission ??
+        DEFAULT_ME.commissionAED
+    ),
+    commissionPct: Number(
+      agent.commissionPct ?? agent.commissionRate ?? DEFAULT_ME.commissionPct
+    ),
+    revenueAED: Number(
+      agent.revenueAED ?? agent.revenue ?? DEFAULT_ME.revenueAED
+    ),
+    clients: Number(agent.clients ?? DEFAULT_ME.clients),
+  };
+}
+
+function normalizeLeads(data) {
+  const arr = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.leads)
+    ? data.leads
+    : [];
+  return arr.map((l, i) => {
+    const created = l.created_at || l.createdAt;
+    const when = created ? new Date(created).toLocaleString() : "-";
+    return {
+      id: l.id || l.leadId || `L-${900 + i}`,
+      source: l.source || l.channel || "-",
+      status: l.status || "New",
+      age: l.age || l.createdAgo || when,
+      area: l.area || l.location || "-",
+      budget: l.budget ? String(l.budget) : l.budgetRange || "-",
+    };
+  });
+}
+
+function normalizeTasks(data) {
+  const arr = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.tasks)
+    ? data.tasks
+    : [];
+  return arr.map((t, i) => ({
+    id: t.id || t.taskId || `T-${400 + i}`,
+    title: t.title || t.name || "",
+    due: t.due || t.dueLabel || t.dueDate || t.created_at || "",
+    type: t.type || t.category || t.source || "",
+  }));
+}
+
+function normalizeCalls(data) {
+  const arr = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.calls)
+    ? data.calls
+    : [];
+  return arr.map((c, i) => ({
+    id: c.id || c.callId || `C-${980 + i}`,
+    who: c.who || c.contact || c.customer || c.title || "",
+    when: c.when || c.time || c.createdAgo || c.created_at || "",
+    notes:
+      c.notes || c.summary || (c.duration ? `Duration ${c.duration}s` : ""),
+  }));
 }
