@@ -1056,11 +1056,13 @@ export default function AgentDashboard() {
   const [leads, setLeads] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [calls, setCalls] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
+        setLoading(true);
         const [homeRes, leadsRes, tasksRes, callsRes] = await Promise.all([
           getHome().catch(() => null),
           getLeads().catch(() => []),
@@ -1076,6 +1078,8 @@ export default function AgentDashboard() {
         setCalls(normalizeCalls(callsRes || []));
       } catch (_) {
         // keep defaults silently
+      } finally {
+        if (isMounted) setLoading(false);
       }
     })();
     return () => {
@@ -1188,7 +1192,18 @@ export default function AgentDashboard() {
         </div>
       </div>
       {/* Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6">{Current}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6">
+        {loading ? (
+          <div className="w-full flex items-center justify-center py-24">
+            <div
+              className="h-8 w-8 rounded-full border-2 border-gray-300 border-t-transparent animate-spin"
+              style={{ borderTopColor: TOKENS.brand }}
+            />
+          </div>
+        ) : (
+          Current
+        )}
+      </main>
       <footer
         className="py-8 text-center text-xs"
         style={{ color: TOKENS.muted }}
