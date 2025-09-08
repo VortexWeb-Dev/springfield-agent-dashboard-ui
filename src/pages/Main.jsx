@@ -52,24 +52,24 @@ const TOKENS = {
 
 // ----- Default agent (used until API loads) -----
 const DEFAULT_ME = {
-  id: "AG-1027",
-  name: "Aisha Khan",
-  photo: "https://randomuser.me/api/portraits/women/44.jpg",
-  team: "Dubai Marina",
-  phone: "+971 55 123 4567",
-  email: "aisha.khan@vortexweb.ae",
-  leads: 142,
-  deals: 28,
-  activities: 96,
-  calls: 238,
-  closures: 22,
-  tasks: 61,
-  missed: 7,
-  conv: 19, // %
-  commissionAED: 68500,
-  commissionPct: 16,
-  revenueAED: 268000,
-  clients: 49,
+  id: "",
+  name: "",
+  photo: "",
+  team: "",
+  phone: "",
+  email: "",
+  leads: 0,
+  deals: 0,
+  activities: 0,
+  calls: 0,
+  closures: 0,
+  tasks: 0,
+  missed: 0,
+  conv: 0,
+  commissionAED: 0,
+  commissionPct: 0,
+  revenueAED: 0,
+  clients: 0,
 };
 
 // API client

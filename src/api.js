@@ -34,7 +34,7 @@ async function httpGet(path, params) {
   return res.json();
 }
 
-const DEFAULT_ID = 8;
+const DEFAULT_ID = 415;
 
 export async function getHome(id = DEFAULT_ID) {
   return httpGet("/", { endpoint: "home", id });
