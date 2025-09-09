@@ -546,6 +546,7 @@ function Pipeline({ me }) {
 
 function Tasks({ items }) {
   items = items || [];
+  console.log(items);
   return (
     <Card>
       <CardBody>
@@ -596,7 +597,7 @@ function Calls({ list }) {
               <div className="font-medium" style={{ color: TOKENS.text }}>
                 {c.who}{" "}
                 <span className="text-xs" style={{ color: TOKENS.muted }}>
-                  • {c.when}
+                  • {formateDate(c.when)}
                 </span>
               </div>
               <div className="text-xs" style={{ color: TOKENS.muted }}>
@@ -1361,16 +1362,24 @@ function normalizeLeads(data) {
   });
 }
 
+function formateDate(date) {
+  if (!date) return "";
+  return new Date(date).toLocaleString();
+}
+
 function normalizeTasks(data) {
   const arr = Array.isArray(data)
     ? data
     : Array.isArray(data?.tasks)
     ? data.tasks
     : [];
+  console.log(data);
   return arr.map((t, i) => ({
     id: t.id || t.taskId || `T-${400 + i}`,
     title: t.title || t.name || "",
-    due: t.due || t.dueLabel || t.dueDate || t.created_at || "",
+    due: formateDate(
+      t.due || t.dueLabel || t.dueDate || t.created_at || t.due_date || ""
+    ),
     type: t.type || t.category || t.source || "",
   }));
 }
@@ -1386,6 +1395,13 @@ function normalizeCalls(data) {
     who: c.who || c.contact || c.customer || c.title || "",
     when: c.when || c.time || c.createdAgo || c.created_at || "",
     notes:
-      c.notes || c.summary || (c.duration ? `Duration ${c.duration}s` : ""),
+      c.notes ||
+      c.summary ||
+      [
+        c.duration ? `Duration ${c.duration}s` : "",
+        c.source ? `Source: ${c.source}` : "",
+      ]
+        .filter(Boolean)
+        .join(" • "),
   }));
 }
