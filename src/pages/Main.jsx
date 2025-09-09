@@ -471,17 +471,26 @@ function MyLeads({ me, leads }) {
   );
 }
 
-function Pipeline({ me }) {
-  const funnel = [
-    { stage: "Leads", value: me.leads },
-    { stage: "Qualified", value: Math.round(me.leads * 0.7) },
-    { stage: "Viewings", value: Math.round(me.leads * 0.42) },
-    { stage: "Offers", value: Math.round(me.leads * 0.16) },
-    { stage: "Closures", value: me.closures },
-  ];
-  const sources = buildLeadSources(me);
+function Pipeline({ pipeline }) {
+  console.log(pipeline);
+
+  // Funnel stages from API
+  const funnel = Object.entries(pipeline.stage || {}).map(([stage, value]) => ({
+    stage,
+    value,
+  }));
+
+  // Lead sources from API
+  const sources = Object.entries(pipeline.source || {}).map(
+    ([name, value]) => ({
+      name,
+      value,
+    })
+  );
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      {/* Funnel Chart */}
       <Card className="xl:col-span-2">
         <CardBody>
           <div
@@ -507,6 +516,8 @@ function Pipeline({ me }) {
           </div>
         </CardBody>
       </Card>
+
+      {/* Lead Sources */}
       <Card>
         <CardBody>
           <div
@@ -530,8 +541,7 @@ function Pipeline({ me }) {
                       key={i}
                       fill={i % 2 === 0 ? TOKENS.brand : TOKENS.redAccent}
                     />
-                  ))}{" "}
-                  {/* Alternating brand and redAccent */}
+                  ))}
                 </Pie>
                 <Legend />
                 <Tooltip />
@@ -1161,7 +1171,7 @@ export default function AgentDashboard() {
       case "leads":
         return <MyLeads me={me} leads={leads} />;
       case "pipeline":
-        return <Pipeline me={me} pipeline={pipeline} />;
+        return <Pipeline me={me} pipeline={pipeline?.pipeline} />;
       case "tasks":
         return <Tasks items={tasks} />;
       case "calls":
