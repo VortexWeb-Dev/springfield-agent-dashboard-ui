@@ -1094,7 +1094,8 @@ function AgentReportCard({ me, onClose }) {
   );
 }
 
-export default function AgentDashboard() {
+export default function AgentDashboard({ user }) {
+  console.log(user);
   const [tab, setTab] = useState("home");
   const [openReport, setOpenReport] = useState(false);
   const [me, setMe] = useState(DEFAULT_ME);
@@ -1113,6 +1114,12 @@ export default function AgentDashboard() {
     (async () => {
       try {
         setLoading(true);
+        const userId = user?.ID || user?.id || null;
+
+        // If no userId, show error message as user id is required to fetch data
+        if (!userId) {
+          return setError("User ID is required to fetch data.");
+        }
         const [
           homeRes,
           leadsRes,
