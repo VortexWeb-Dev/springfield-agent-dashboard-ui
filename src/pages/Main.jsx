@@ -1404,7 +1404,7 @@ function normalizeCalls(data) {
       c.notes ||
       c.summary ||
       [
-        c.duration ? `Duration ${c.duration}s` : "",
+        c.direction ? `Direction: ${c.direction}` : "",
         c.source ? `Source: ${c.source}` : "",
       ]
         .filter(Boolean)
