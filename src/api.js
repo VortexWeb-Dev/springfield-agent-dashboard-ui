@@ -34,36 +34,34 @@ async function httpGet(path, params) {
   return res.json();
 }
 
-const DEFAULT_ID = 281;
-
-export async function getHome(id = DEFAULT_ID) {
+export async function getHome(id) {
   return httpGet("/", { endpoint: "home", id });
 }
 
-export async function getPipeline(id = DEFAULT_ID) {
+export async function getPipeline(id) {
   return httpGet("/", { endpoint: "pipeline", id });
 }
 
-export async function getEarnings(id = DEFAULT_ID) {
+export async function getEarnings(id) {
   return httpGet("/", { endpoint: "earnings", id });
 }
 
-export async function getGoals(id = DEFAULT_ID) {
+export async function getGoals(id) {
   return httpGet("/", { endpoint: "goals", id });
 }
 
-export async function getReports(id = DEFAULT_ID) {
+export async function getReports(id) {
   return httpGet("/", { endpoint: "reports", id });
 }
 
-export async function getTasks(id = DEFAULT_ID) {
+export async function getTasks(id) {
   return httpGet("/", { endpoint: "tasks", id });
 }
 
-export async function getCalls(id = DEFAULT_ID) {
+export async function getCalls(id) {
   return httpGet("/", { endpoint: "calls", id });
 }
 
-export async function getLeads(id = DEFAULT_ID) {
+export async function getLeads(id) {
   return httpGet("/", { endpoint: "leads", id });
 }
