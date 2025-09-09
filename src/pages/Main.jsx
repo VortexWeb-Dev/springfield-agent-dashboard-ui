@@ -670,11 +670,12 @@ function Earnings({ me }) {
   );
 }
 
-function Goals({ me }) {
-  const [leadTarget, setLeadTarget] = useState(180);
-  const [dealTarget, setDealTarget] = useState(32);
-  const leadPct = Math.min(100, Math.round((me.leads / leadTarget) * 100));
-  const dealPct = Math.min(100, Math.round((me.deals / dealTarget) * 100));
+function Goals({ me, goals }) {
+  console.log(goals);
+  const [leadTarget, setLeadTarget] = useState(goals.stats.leads.total);
+  const [dealTarget, setDealTarget] = useState(goals.stats.deals.total);
+  const leadPct = goals.stats.leads.conv;
+  const dealPct = goals.stats.deals.conv;
   return (
     <Card>
       <CardBody>
@@ -690,7 +691,7 @@ function Goals({ me }) {
               />
             </div>
             <div className="text-xs mt-1" style={{ color: TOKENS.muted }}>
-              {me.leads} / {leadTarget} ({leadPct}%)
+              {goals.stats.leads.closed} / {leadTarget} ({leadPct}%)
             </div>
           </div>
           <div>
@@ -708,7 +709,7 @@ function Goals({ me }) {
               {/* Using redAccent for deal target */}
             </div>
             <div className="text-xs mt-1" style={{ color: TOKENS.muted }}>
-              {me.deals} / {dealTarget} ({dealPct}%)
+              {goals.stats.deals.closed} / {dealTarget} ({dealPct}%)
             </div>
           </div>
         </div>
