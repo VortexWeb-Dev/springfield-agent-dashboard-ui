@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, use } from "react";
 import {
   Download,
   LayoutGrid,
@@ -1130,14 +1130,14 @@ export default function AgentDashboard({ user }) {
           goalsRes,
           reportsRes,
         ] = await Promise.all([
-          getHome().catch(() => null),
-          getLeads().catch(() => []),
-          getTasks().catch(() => []),
-          getCalls().catch(() => []),
-          getPipeline().catch(() => []),
-          getEarnings().catch(() => []),
-          getGoals().catch(() => []),
-          getReports().catch(() => []),
+          getHome(userId).catch(() => null),
+          getLeads(userId).catch(() => []),
+          getTasks(userId).catch(() => []),
+          getCalls(userId).catch(() => []),
+          getPipeline(userId).catch(() => []),
+          getEarnings(userId).catch(() => []),
+          getGoals(userId).catch(() => []),
+          getReports(userId).catch(() => []),
         ]);
         if (!isMounted) return;
         if (homeRes) {
