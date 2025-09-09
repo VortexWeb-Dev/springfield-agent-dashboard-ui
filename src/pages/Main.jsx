@@ -472,8 +472,6 @@ function MyLeads({ me, leads }) {
 }
 
 function Pipeline({ pipeline }) {
-  console.log(pipeline);
-
   // Funnel stages from API
   const funnel = Object.entries(pipeline.stage || {}).map(([stage, value]) => ({
     stage,
@@ -556,7 +554,7 @@ function Pipeline({ pipeline }) {
 
 function Tasks({ items }) {
   items = items || [];
-  console.log(items);
+
   return (
     <Card>
       <CardBody>
@@ -622,7 +620,6 @@ function Calls({ list }) {
 }
 
 function Earnings({ me, earnings }) {
-  console.log(earnings);
   const series = [];
 
   Object.keys(earnings.stats.months).forEach((month) => {
@@ -687,7 +684,6 @@ function Earnings({ me, earnings }) {
 }
 
 function Goals({ me, goals }) {
-  console.log(goals);
   const [leadTarget, setLeadTarget] = useState(goals.stats.leads.total);
   const [dealTarget, setDealTarget] = useState(goals.stats.deals.total);
   const leadPct = goals.stats.leads.conv;
@@ -1141,7 +1137,7 @@ export default function AgentDashboard() {
           setMe((prev) => ({ ...prev, ...normalizeAgent(homeRes) }));
           setEvents((prev) => {
             const updated = [...prev, ...homeRes.events];
-            console.log("updated events:", updated);
+
             return updated;
           });
         }
@@ -1383,7 +1379,7 @@ function normalizeTasks(data) {
     : Array.isArray(data?.tasks)
     ? data.tasks
     : [];
-  console.log(data);
+
   return arr.map((t, i) => ({
     id: t.id || t.taskId || `T-${400 + i}`,
     title: t.title || t.name || "",
