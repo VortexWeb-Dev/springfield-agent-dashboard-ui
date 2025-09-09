@@ -137,7 +137,6 @@ function downloadMyCSV(agent) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-
 function buildMonthlySeries(agent) {
   const months = ["Apr", "May", "Jun", "Jul", "Aug"];
   const wL = [0.18, 0.2, 0.22, 0.2, 0.2];
@@ -167,6 +166,28 @@ function buildLeadSources(agent) {
     { name: "Referral", value: referral },
     { name: "Website", value: website },
   ];
+}
+function getRelativeTime(dateString) {
+  const target = new Date(dateString);
+  const now = new Date();
+
+  const diffMs = target - now;
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHour = Math.round(diffMin / 60);
+  const diffDay = Math.round(diffHour / 24);
+
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+  if (Math.abs(diffSec) < 60) {
+    return rtf.format(diffSec, "second");
+  } else if (Math.abs(diffMin) < 60) {
+    return rtf.format(diffMin, "minute");
+  } else if (Math.abs(diffHour) < 24) {
+    return rtf.format(diffHour, "hour");
+  } else {
+    return rtf.format(diffDay, "day");
+  }
 }
 
 // ----- Small UI primitives -----
@@ -246,7 +267,7 @@ const TABS = [
 ];
 
 // ----- Pages -----
-function Home({ me }) {
+function Home({ me, events }) {
   const monthly = useMemo(() => buildMonthlySeries(me), [me]);
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -345,28 +366,25 @@ function Home({ me }) {
             Today
           </div>
           <ul className="mt-2 text-sm space-y-2">
-            <li
-              className="flex items-center justify-between p-2 rounded-xl border"
-              style={{ borderColor: TOKENS.border }}
-            >
-              <span>Follow up with Bayut lead L-889</span>
-              <Badge color={TOKENS.redAccent}>due 2h</Badge>
-            </li>{" "}
-            {/* Red accent for urgent badge */}
-            <li
-              className="flex items-center justify-between p-2 rounded-xl border"
-              style={{ borderColor: TOKENS.border }}
-            >
-              <span>Viewing at Marina Gate</span>
-              <Badge>5:30 PM</Badge>
-            </li>
-            <li
-              className="flex items-center justify-between p-2 rounded-xl border"
-              style={{ borderColor: TOKENS.border }}
-            >
-              <span>Call back: Mr. Ali</span>
-              <Badge>6:00 PM</Badge>
-            </li>
+            {events && events.length > 0 ? (
+              events.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between p-2 rounded-xl border"
+                  style={{ borderColor: TOKENS.border }}
+                >
+                  <span>{e.title}</span>
+                  <Badge>{getRelativeTime(e.due_date)}</Badge>
+                </li>
+              ))
+            ) : (
+              <li
+                className="flex items-center justify-between p-2 rounded-xl border"
+                style={{ borderColor: TOKENS.border }}
+              >
+                <span>No events today</span>
+              </li>
+            )}
           </ul>
         </CardBody>
       </Card>
@@ -396,7 +414,14 @@ function MyLeads({ me, leads }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <Button variant="outline">Create Lead</Button>
+          <Button variant="outline">
+            <a
+              href="https://crm.springfieldproperties.ae/crm/lead/details/0/"
+              target="_blank"
+            >
+              Create Lead
+            </a>
+          </Button>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -427,7 +452,14 @@ function MyLeads({ me, leads }) {
                   <td className="py-2 pr-4">{l.budget}</td>
                   <td className="py-2 pr-4">{l.age}</td>
                   <td className="py-2 pr-4">
-                    <Button variant="ghost">Open</Button>
+                    <Button variant="ghost">
+                      <a
+                        href={`https://crm.springfieldproperties.ae/crm/lead/details/${l.id}/`}
+                        target="_blank"
+                      >
+                        View
+                      </a>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -1053,9 +1085,14 @@ export default function AgentDashboard() {
   const [tab, setTab] = useState("home");
   const [openReport, setOpenReport] = useState(false);
   const [me, setMe] = useState(DEFAULT_ME);
+  const [events, setEvents] = useState([]);
   const [leads, setLeads] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [calls, setCalls] = useState([]);
+  const [pipeline, setPipeline] = useState([]);
+  const [earnings, setEarnings] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1063,21 +1100,44 @@ export default function AgentDashboard() {
     (async () => {
       try {
         setLoading(true);
-        const [homeRes, leadsRes, tasksRes, callsRes] = await Promise.all([
+        const [
+          homeRes,
+          leadsRes,
+          tasksRes,
+          callsRes,
+          pipelineRes,
+          earningsRes,
+          goalsRes,
+          reportsRes,
+        ] = await Promise.all([
           getHome().catch(() => null),
           getLeads().catch(() => []),
           getTasks().catch(() => []),
           getCalls().catch(() => []),
+          getPipeline().catch(() => []),
+          getEarnings().catch(() => []),
+          getGoals().catch(() => []),
+          getReports().catch(() => []),
         ]);
         if (!isMounted) return;
         if (homeRes) {
           setMe((prev) => ({ ...prev, ...normalizeAgent(homeRes) }));
+          setEvents((prev) => {
+            const updated = [...prev, ...homeRes.events];
+            console.log("updated events:", updated);
+            return updated;
+          });
         }
         setLeads(normalizeLeads(leadsRes || []));
         setTasks(normalizeTasks(tasksRes || []));
         setCalls(normalizeCalls(callsRes || []));
+        setPipeline(pipelineRes || []);
+        setEarnings(earningsRes || []);
+        setGoals(goalsRes || []);
+        setReports(reportsRes || []);
       } catch (_) {
         // keep defaults silently
+        console.error(_);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -1090,27 +1150,45 @@ export default function AgentDashboard() {
   const Current = useMemo(() => {
     switch (tab) {
       case "home":
-        return <Home me={me} />;
+        return <Home me={me} events={events} />;
       case "leads":
         return <MyLeads me={me} leads={leads} />;
       case "pipeline":
-        return <Pipeline me={me} />;
+        return <Pipeline me={me} pipeline={pipeline} />;
       case "tasks":
         return <Tasks items={tasks} />;
       case "calls":
         return <Calls list={calls} />;
       case "earnings":
-        return <Earnings me={me} />;
+        return <Earnings me={me} earnings={earnings} />;
       case "goals":
-        return <Goals me={me} />;
+        return <Goals me={me} goals={goals} />;
       case "reports":
-        return <Reports me={me} openReportCard={() => setOpenReport(true)} />;
+        return (
+          <Reports
+            me={me}
+            reports={reports}
+            openReportCard={() => setOpenReport(true)}
+          />
+        );
       case "settings":
         return <SettingsPage />;
       default:
-        return <Home me={me} />;
+        return <Home me={me} events={events} />;
     }
-  }, [tab, openReport, me, leads, tasks, calls]);
+  }, [
+    tab,
+    // openReport,
+    me,
+    leads,
+    tasks,
+    calls,
+    pipeline,
+    earnings,
+    goals,
+    reports,
+    events,
+  ]);
 
   return (
     <div
