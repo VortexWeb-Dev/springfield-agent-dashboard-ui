@@ -610,13 +610,18 @@ function Calls({ list }) {
   );
 }
 
-function Earnings({ me }) {
-  const series = [
-    { month: "May", payout: 14500 },
-    { month: "Jun", payout: 15800 },
-    { month: "Jul", payout: 16800 },
-    { month: "Aug", payout: 21400 },
-  ];
+function Earnings({ me, earnings }) {
+  console.log(earnings);
+  const series = [];
+
+  Object.keys(earnings.stats.months).forEach((month) => {
+    const formattedMonth = month[0].toUpperCase() + month.slice(1);
+    series.push({
+      month: formattedMonth,
+      payout: earnings.stats.months[month].commission,
+      rate: earnings.stats.months[month].conv,
+    });
+  });
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
       <Card className="xl:col-span-2">
@@ -651,10 +656,10 @@ function Earnings({ me }) {
             My Commission
           </div>
           <div className="text-2xl font-semibold">
-            AED {me.commissionAED.toLocaleString()}
+            AED {earnings.stats.total.commission.toLocaleString()}
           </div>
           <div className="text-xs mt-1" style={{ color: TOKENS.muted }}>
-            Rate: {me.commissionPct}%
+            Conversion: {earnings.stats.total.conv}%
           </div>
           <Button
             variant="outline"
